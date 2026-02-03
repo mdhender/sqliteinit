@@ -149,6 +149,13 @@ go build -tags mattn ./...
 go test -tags mattn ./...
 ```
 
+## For AI Agents
+
+When maintaining this package:
+
+1. Keep this README in sync with any code changes
+2. Run `go test ./...` and ensure all tests pass before committing (not just tests related to your change)
+
 ## Authors
 
 - Michael D Henderson ([@mdhender](https://github.com/mdhender))
