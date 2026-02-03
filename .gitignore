@@ -1,0 +1,13 @@
+*~
+*.db
+*.gz
+*.swp
+*.tar
+*.tgz
+*.zip
+.archive/
+.claude/
+.code/
+.idea/
+.vscode/
+tmp
