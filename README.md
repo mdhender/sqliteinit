@@ -94,6 +94,15 @@ db, err := sqliteinit.Open(ctx, sqliteinit.Config{
 
 // Delete a database (including WAL files)
 err := sqliteinit.Delete(ctx, "/data/myapp/app.db")
+
+// Check migration status (dry-run)
+status, err := sqliteinit.Status(ctx, sqliteinit.Config{
+    Path:       "/data/myapp/app.db",
+    Migrations: migrations,
+})
+// status.Pending lists migrations that would be applied
+// status.Applied lists migrations already applied
+// status.SchemaVersion is the current version
 ```
 
 ## Configuration
