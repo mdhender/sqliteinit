@@ -53,6 +53,12 @@ type Config struct {
 	// AppVersion is written to the config table after initialization.
 	// Leave empty to skip writing app metadata.
 	AppVersion string
+
+	// RequiredSchemaVersion, if non-zero, causes Open to verify that the
+	// database schema version exactly matches this value after any migrations
+	// are applied. Returns an error if the versions don't match.
+	// Useful for catching schema/code mismatches at startup.
+	RequiredSchemaVersion int
 }
 
 // defaults returns a copy of cfg with default values applied.
@@ -262,6 +268,20 @@ func openAndMigrate(ctx context.Context, cfg Config, pragmas []pragma) (*sql.DB,
 
 		if err := migrate(migCtx, db, cfg); err != nil {
 			return nil, fmt.Errorf("migrate: %w", err)
+		}
+	}
+
+	// Verify schema version if required
+	if cfg.RequiredSchemaVersion != 0 {
+		version, err := fetchSchemaVersion(ctx, db)
+		if err != nil {
+			return nil, fmt.Errorf("fetch schema version: %w", err)
+		}
+		if version == nil {
+			return nil, fmt.Errorf("schema version check failed: database not initialized")
+		}
+		if *version != cfg.RequiredSchemaVersion {
+			return nil, fmt.Errorf("schema version mismatch: required %d, found %d", cfg.RequiredSchemaVersion, *version)
 		}
 	}
 

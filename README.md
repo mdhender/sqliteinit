@@ -104,6 +104,7 @@ err := sqliteinit.Delete(ctx, "/data/myapp/app.db")
 | `Migrations` | nil | `fs.FS` containing your SQL migration files |
 | `SkipMigrations` | false | Set to true to open without running migrations |
 | `AppVersion` | "" | Written to config table after initialization |
+| `RequiredSchemaVersion` | 0 | If non-zero, verify schema version matches exactly |
 | `ProductionEnvVar` | "ENV" | Env var checked for production mode |
 | `AllowMemoryInProduction` | false | Allow `:memory:` when env var is "production" |
 | `MigrationTimeout` | 90s | Maximum time for migration execution |

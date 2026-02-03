@@ -2,7 +2,10 @@ module github.com/mdhender/sqliteinit
 
 go 1.25.5
 
-require modernc.org/sqlite v1.44.3
+require (
+	github.com/maloquacious/semver v0.4.0
+	modernc.org/sqlite v1.44.3
+)
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect

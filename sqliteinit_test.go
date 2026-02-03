@@ -394,6 +394,103 @@ func TestMigrate_Timeout(t *testing.T) {
 	}
 }
 
+// TestOpen_RequiredSchemaVersion_Match tests that matching version succeeds.
+func TestOpen_RequiredSchemaVersion_Match(t *testing.T) {
+	ctx := context.Background()
+
+	db, err := sqliteinit.Open(ctx, sqliteinit.Config{
+		Path:                  ":memory:",
+		Migrations:            validMigrations(),
+		RequiredSchemaVersion: 20260101000002, // matches last migration ID
+	})
+	if err != nil {
+		t.Fatalf("Open should succeed with matching version: %v", err)
+	}
+	db.Close()
+}
+
+// TestOpen_RequiredSchemaVersion_Mismatch tests that mismatched version fails.
+func TestOpen_RequiredSchemaVersion_Mismatch(t *testing.T) {
+	ctx := context.Background()
+
+	_, err := sqliteinit.Open(ctx, sqliteinit.Config{
+		Path:                  ":memory:",
+		Migrations:            validMigrations(),
+		RequiredSchemaVersion: 99999999999999, // does not match
+	})
+	if err == nil {
+		t.Fatal("Open should fail with mismatched version")
+	}
+}
+
+// TestOpen_RequiredSchemaVersion_ZeroSkipsCheck tests that RequiredSchemaVersion=0 skips the check.
+func TestOpen_RequiredSchemaVersion_ZeroSkipsCheck(t *testing.T) {
+	ctx := context.Background()
+
+	// RequiredSchemaVersion=0 means "don't check", so this succeeds
+	// even though actual schema version is 0 (from init only)
+	db, err := sqliteinit.Open(ctx, sqliteinit.Config{
+		Path:                  ":memory:",
+		RequiredSchemaVersion: 0,
+	})
+	if err != nil {
+		t.Fatalf("Open failed: %v", err)
+	}
+	db.Close()
+}
+
+// TestOpen_RequiredSchemaVersion_NoUserMigrations tests version check with no user migrations.
+func TestOpen_RequiredSchemaVersion_NoUserMigrations(t *testing.T) {
+	ctx := context.Background()
+
+	// With no user migrations, schema version is 0 (from init).
+	// Requiring any non-zero version should fail.
+	_, err := sqliteinit.Open(ctx, sqliteinit.Config{
+		Path:                  ":memory:",
+		RequiredSchemaVersion: 1,
+	})
+	if err == nil {
+		t.Fatal("Open should fail when requiring version 1 with no migrations")
+	}
+}
+
+// TestOpen_RequiredSchemaVersion_WithSkipMigrations tests version check with SkipMigrations.
+func TestOpen_RequiredSchemaVersion_WithSkipMigrations(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.db")
+
+	// Create with migrations
+	err := sqliteinit.Create(ctx, sqliteinit.Config{
+		Path:       path,
+		Migrations: validMigrations(),
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	// Open with SkipMigrations but correct required version
+	db, err := sqliteinit.Open(ctx, sqliteinit.Config{
+		Path:                  path,
+		SkipMigrations:        true,
+		RequiredSchemaVersion: 20260101000002,
+	})
+	if err != nil {
+		t.Fatalf("Open should succeed: %v", err)
+	}
+	db.Close()
+
+	// Open with SkipMigrations and wrong required version
+	_, err = sqliteinit.Open(ctx, sqliteinit.Config{
+		Path:                  path,
+		SkipMigrations:        true,
+		RequiredSchemaVersion: 99999999999999,
+	})
+	if err == nil {
+		t.Fatal("Open should fail with mismatched version")
+	}
+}
+
 // TestOpen_SkipMigrations tests opening without auto-migration.
 func TestOpen_SkipMigrations(t *testing.T) {
 	ctx := context.Background()
